@@ -94,7 +94,16 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         shell: bash
-        run: npx electron-builder --mac --arm64 --publish never
+        run: |
+          npx electron-builder --mac --arm64 --publish never 2>&1 | tee /tmp/eb-out.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "## electron-builder 错误输出" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -80 /tmp/eb-out.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit $EXIT_CODE
+          fi
 
       - name: Build installer (Windows)
         if: matrix.target == 'win'
@@ -102,7 +111,16 @@ jobs:
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         shell: pwsh
-        run: npx electron-builder --win --x64 --publish never
+        run: |
+          $output = npx electron-builder --win --x64 --publish never 2>&1
+          $output | Tee-Object -Variable captured
+          if ($LASTEXITCODE -ne 0) {
+            $summary = "## electron-builder 错误输出`n" + '```' + "`n"
+            $summary += ($captured | Select-Object -Last 80 | Out-String)
+            $summary += '```'
+            $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            exit $LASTEXITCODE
+          }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
