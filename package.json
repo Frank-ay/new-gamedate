@@ -1,6 +1,6 @@
 {
   "name": "gamedata-monitor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Google Play 美国市场游戏增长监控 - 桌面版",
   "main": "electron/main.cjs",
   "type": "module",
@@ -80,7 +80,7 @@
     },
     "mac": {
       "category": "public.app-category.business",
-      "icon": "build/icon.icns",
+      "icon": "build/icon.png",
       "target": [
         { "target": "dmg", "arch": ["arm64"] }
       ],
@@ -99,7 +99,7 @@
       "writeUpdateInfo": false
     },
     "win": {
-      "icon": "build/icon.ico",
+      "icon": "build/icon.png",
       "target": [
         { "target": "nsis", "arch": ["x64"] }
       ]
