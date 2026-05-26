@@ -87,40 +87,27 @@ jobs:
       - name: Build installer (macOS)
         if: matrix.target == 'mac'
         env:
-          CSC_LINK: ${{ env.HAS_MAC_CERT == 'true' && '/tmp/mac-cert.p12' || '' }}
+          HAS_MAC_CERT: ${{ env.HAS_MAC_CERT }}
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         shell: bash
         run: |
-          npx electron-builder --mac --arm64 --publish never 2>&1 | tee /tmp/eb-out.txt
-          EXIT_CODE=${PIPESTATUS[0]}
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "## electron-builder 错误输出" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -80 /tmp/eb-out.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit $EXIT_CODE
+          # CSC_LINK 只在证书文件存在时才导出;空字符串会误触发 electron-builder 签名
+          if [ "$HAS_MAC_CERT" = "true" ]; then
+            export CSC_LINK=/tmp/mac-cert.p12
+          else
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
           fi
+          npx electron-builder --mac --arm64 --publish never
 
       - name: Build installer (Windows)
         if: matrix.target == 'win'
-        env:
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         shell: pwsh
         run: |
-          $output = npx electron-builder --win --x64 --publish never 2>&1
-          $output | Tee-Object -Variable captured
-          if ($LASTEXITCODE -ne 0) {
-            $summary = "## electron-builder 错误输出`n" + '```' + "`n"
-            $summary += ($captured | Select-Object -Last 80 | Out-String)
-            $summary += '```'
-            $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-            exit $LASTEXITCODE
-          }
+          # WIN_CSC_LINK 不设置,跳过 Windows 代码签名
+          npx electron-builder --win --x64 --publish never
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

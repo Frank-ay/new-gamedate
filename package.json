@@ -1,7 +1,8 @@
 {
   "name": "gamedata-monitor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Google Play 美国市场游戏增长监控 - 桌面版",
+  "author": "GameDataMonitor",
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
