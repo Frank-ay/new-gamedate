@@ -1,0 +1,54 @@
+# Google Play 采集配置
+scraper:
+  country: "us"
+  lang: "en"
+  # 请求间隔（秒），含随机 ±0.5s 抖动
+  request_delay: 1.5
+  # 最大重试次数
+  max_retries: 3
+  # 连接超时（毫秒）
+  timeout: 15000
+
+charts:
+  # 全榜+主品类采集数量（TOP_FREE / GROSSING + category=GAME）
+  top_n: 200
+  # 子品类采集数量（每个子品类）
+  category_n: 50
+  # 要抓取的榜单类型（v10 只有 TOP_FREE / TOP_PAID / GROSSING）
+  collections:
+    - TOP_FREE
+    - GROSSING
+  # 品类列表（GAME = 全品类总榜，其余为子品类）
+  categories:
+    - GAME
+    - GAME_ACTION
+    - GAME_ADVENTURE
+    - GAME_ARCADE
+    - GAME_BOARD
+    - GAME_CARD
+    - GAME_CASUAL
+    - GAME_EDUCATIONAL
+    - GAME_MUSIC
+    - GAME_PUZZLE
+    - GAME_RACING
+    - GAME_ROLE_PLAYING
+    - GAME_SIMULATION
+    - GAME_SPORTS
+    - GAME_STRATEGY
+    - GAME_TRIVIA
+    - GAME_WORD
+
+details:
+  # 超过多少天强制刷新详情（即使已有数据）
+  refresh_after_days: 7
+
+assets:
+  # 是否下载 icon 到本地
+  download_icons: true
+  # icon 图片大小
+  icon_size: 192
+
+logging:
+  level: "info"
+  # 日志文件保留天数
+  keep_days: 30

@@ -1,0 +1,7 @@
+# Python 依赖(运行时)
+# 与 pyproject.toml 派生而来,锁版本用于 CI 构建与本地嵌入式 Python。
+# 安装目标:resources/python/lib/python3.11/site-packages
+pandas==2.2.3
+streamlit==1.36.0
+plotly==5.24.1
+requests==2.32.3

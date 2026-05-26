@@ -1,0 +1,15 @@
+[project]
+name = "gamedata-analysis"
+version = "1.0.0"
+description = "Google Play 游戏增长监控 - 分析与展示层"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "streamlit>=1.35",
+    "plotly>=5.22",
+    "requests>=2.31",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

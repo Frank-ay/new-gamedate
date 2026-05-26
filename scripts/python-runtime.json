@@ -1,0 +1,23 @@
+{
+  "_comment": "python-build-standalone 嵌入式 Python runtime 版本与平台对应表。SHA256 由 PBS release 同名 .sha256 sidecar 在线校验,首次下载后会写回此文件做未来本地校验。",
+  "release": "20250115",
+  "pythonVersion": "3.11.11",
+  "platforms": {
+    "darwin-arm64": {
+      "archive": "cpython-3.11.11+20250115-aarch64-apple-darwin-install_only.tar.gz",
+      "sha256": "1988b302b26d2e6f6949c0b2e94194b5138c6015fe283c825489e173e4553503"
+    },
+    "win32-x64": {
+      "archive": "cpython-3.11.11+20250115-x86_64-pc-windows-msvc-shared-install_only.tar.gz",
+      "sha256": ""
+    },
+    "darwin-x64": {
+      "archive": "cpython-3.11.11+20250115-x86_64-apple-darwin-install_only.tar.gz",
+      "sha256": ""
+    },
+    "linux-x64": {
+      "archive": "cpython-3.11.11+20250115-x86_64-unknown-linux-gnu-install_only.tar.gz",
+      "sha256": ""
+    }
+  }
+}

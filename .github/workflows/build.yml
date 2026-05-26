@@ -1,0 +1,128 @@
+name: Build Installers
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      sign:
+        description: '是否启用代码签名(需配置 Secrets)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14         # Apple Silicon runner
+            target: mac
+            arch: arm64
+            artifact: dist/*.dmg
+          - os: windows-latest   # x64 runner
+            target: win
+            arch: x64
+            artifact: dist/*.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cache python-build-standalone
+        uses: actions/cache@v4
+        with:
+          path: .cache/pbs
+          key: pbs-${{ matrix.os }}-${{ hashFiles('scripts/python-runtime.json') }}
+
+      - name: Cache electron-builder
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: ebuilder-${{ matrix.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install npm deps
+        run: npm ci --no-audit --no-fund
+        # postinstall 会自动跑 electron-builder install-app-deps,
+        # 重编 better-sqlite3 到对应平台的 Electron ABI。
+
+      - name: Fetch Python runtime (PBS)
+        run: npm run fetch:python
+
+      - name: Install Python deps to embedded runtime (with strip)
+        run: npm run install:py-deps:strip
+
+      # ─── 签名密钥(可选,通过 workflow_dispatch 触发或 tag 推送时启用)─────────
+      - name: Setup macOS signing
+        if: matrix.target == 'mac' && (github.event_name == 'push' || github.event.inputs.sign == 'true')
+        env:
+          MAC_CERT_BASE64: ${{ secrets.MAC_CERT_BASE64 }}
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+        run: |
+          if [ -z "$MAC_CERT_BASE64" ]; then
+            echo "⚠ MAC_CERT_BASE64 未配置,跳过签名" >&2
+            exit 0
+          fi
+          echo "$MAC_CERT_BASE64" | base64 --decode > /tmp/mac-cert.p12
+
+      - name: Build installer
+        env:
+          # mac
+          CSC_LINK: ${{ matrix.target == 'mac' && '/tmp/mac-cert.p12' || '' }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # win
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          # 关闭 auto-discovery,如果没有 cert 就跳过签名,不阻塞构建
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_BASE64 != '' && 'true' || 'false' }}
+        shell: bash
+        run: |
+          if [ "${{ matrix.target }}" = "mac" ]; then
+            npx electron-builder --mac --arm64 --publish never
+          else
+            npx electron-builder --win --x64 --publish never
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.target }}-${{ matrix.arch }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/installer-mac-arm64/*.dmg
+            artifacts/installer-win-x64/*.exe
+          fail_on_unmatched_files: true
+          generate_release_notes: true

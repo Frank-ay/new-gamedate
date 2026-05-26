@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>正在启动</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #fff;
+    overflow: hidden;
+  }
+  .card {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #4338ca 100%);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    -webkit-app-region: drag;
+  }
+  .logo { font-size: 40px; margin-bottom: 12px; }
+  .title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .hint { font-size: 13px; opacity: 0.78; text-align: center; margin-bottom: 22px; }
+  .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🎮</div>
+    <div class="title">GameDataMonitor</div>
+    <div class="hint">正在启动数据面板…<br>首次启动需要 5-10 秒</div>
+    <div class="spinner"></div>
+  </div>
+</body>
+</html>

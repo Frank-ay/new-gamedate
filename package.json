@@ -1,0 +1,116 @@
+{
+  "name": "gamedata-monitor",
+  "version": "1.0.0",
+  "description": "Google Play 美国市场游戏增长监控 - 桌面版",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "collect": "node collector/collect.mjs",
+    "charts": "node collector/charts.mjs",
+    "details": "node collector/details.mjs",
+    "start": "electron .",
+    "fetch:python": "node scripts/fetch-python.mjs",
+    "install:py-deps": "node scripts/install-python-deps.mjs",
+    "install:py-deps:strip": "node scripts/install-python-deps.mjs --strip",
+    "prepack:resources": "npm run fetch:python && npm run install:py-deps:strip",
+    "dist": "npm run prepack:resources && electron-builder",
+    "dist:mac": "npm run prepack:resources && electron-builder --mac --arm64",
+    "dist:win": "npm run prepack:resources && electron-builder --win --x64",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "google-play-scraper": "^10.1.2",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
+    "@electron/rebuild": "^3.6.0"
+  },
+  "build": {
+    "appId": "com.gamedata.monitor",
+    "productName": "GameDataMonitor",
+    "copyright": "© 2026 GameDataMonitor",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*",
+      "node_modules/bindings/**/*",
+      "node_modules/file-uri-to-path/**/*",
+      "collector/**/*",
+      "analysis/**/*",
+      "dashboard/**/*",
+      "config.yaml"
+    ],
+    "files": [
+      "electron/**/*",
+      "collector/**/*",
+      "analysis/**/*",
+      "dashboard/**/*",
+      "config.yaml",
+      "package.json",
+      "node_modules/**/*",
+      "!.venv/**",
+      "!.cache/**",
+      "!data/**",
+      "!logs/**",
+      "!dist/**",
+      "!docs/**",
+      "!**/__pycache__/**",
+      "!**/*.pyc",
+      "!**/*.pyo",
+      "!**/.DS_Store",
+      "!**/tests/**",
+      "!**/test/**"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/python",
+        "to": "python",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "config.yaml",
+        "to": "config.yaml"
+      }
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.business",
+      "icon": "build/icon.icns",
+      "target": [
+        { "target": "dmg", "arch": ["arm64"] }
+      ],
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "gatekeeperAssess": false,
+      "extendInfo": {
+        "LSUIElement": false,
+        "NSHighResolutionCapable": true
+      },
+      "notarize": false
+    },
+    "dmg": {
+      "title": "GameDataMonitor ${version}",
+      "writeUpdateInfo": false
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GameDataMonitor"
+    }
+  }
+}
