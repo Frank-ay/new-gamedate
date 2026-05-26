@@ -54,7 +54,9 @@ jobs:
             ~/.cache/electron-builder
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: ebuilder-${{ matrix.os }}-${{ hashFiles('package-lock.json') }}
+          key: ebuilder-v2-${{ matrix.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ebuilder-v2-${{ matrix.os }}-
 
       - name: Install npm deps
         run: npm ci --no-audit --no-fund
@@ -67,39 +69,40 @@ jobs:
       - name: Install Python deps to embedded runtime (with strip)
         run: npm run install:py-deps:strip
 
-      # ─── 签名密钥(可选,通过 workflow_dispatch 触发或 tag 推送时启用)─────────
+      # ─── 签名密钥(可选)─────────────────────────────────────────────────────
       - name: Setup macOS signing
-        if: matrix.target == 'mac' && (github.event_name == 'push' || github.event.inputs.sign == 'true')
+        if: matrix.target == 'mac'
         env:
           MAC_CERT_BASE64: ${{ secrets.MAC_CERT_BASE64 }}
           MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+        shell: bash
         run: |
           if [ -z "$MAC_CERT_BASE64" ]; then
-            echo "⚠ MAC_CERT_BASE64 未配置,跳过签名" >&2
+            echo "MAC_CERT_BASE64 未配置,跳过签名"
             exit 0
           fi
           echo "$MAC_CERT_BASE64" | base64 --decode > /tmp/mac-cert.p12
+          echo "HAS_MAC_CERT=true" >> $GITHUB_ENV
 
-      - name: Build installer
+      - name: Build installer (macOS)
+        if: matrix.target == 'mac'
         env:
-          # mac
-          CSC_LINK: ${{ matrix.target == 'mac' && '/tmp/mac-cert.p12' || '' }}
+          CSC_LINK: ${{ env.HAS_MAC_CERT == 'true' && '/tmp/mac-cert.p12' || '' }}
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # win
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        shell: bash
+        run: npx electron-builder --mac --arm64 --publish never
+
+      - name: Build installer (Windows)
+        if: matrix.target == 'win'
+        env:
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          # 关闭 auto-discovery,如果没有 cert 就跳过签名,不阻塞构建
-          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_BASE64 != '' && 'true' || 'false' }}
-        shell: bash
-        run: |
-          if [ "${{ matrix.target }}" = "mac" ]; then
-            npx electron-builder --mac --arm64 --publish never
-          else
-            npx electron-builder --win --x64 --publish never
-          fi
+        shell: pwsh
+        run: npx electron-builder --win --x64 --publish never
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
